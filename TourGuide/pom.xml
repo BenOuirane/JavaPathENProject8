@@ -51,19 +51,26 @@
 			<groupId>gpsUtil</groupId>
 			<artifactId>gpsUtil</artifactId>
 			<version>1.0.0</version>
+		    <scope>system</scope>
+            <systemPath>C:/Users/benou/eclipse-workspace/JavaPathENProject8/TourGuide/libs/gpsUtil.jar</systemPath>
 		</dependency>
-
+  
 		<dependency>
 			<groupId>tripPricer</groupId>
 			<artifactId>tripPricer</artifactId>
 			<version>1.0.0</version>
+		    <scope>system</scope>
+			<systemPath>C:/Users/benou/eclipse-workspace/JavaPathENProject8/TourGuide/libs/tripPricer.jar</systemPath>
 		</dependency>
 
 		<dependency>
 			<groupId>rewardCentral</groupId>
 			<artifactId>rewardCentral</artifactId>
 			<version>1.0.0</version>
+			<scope>system</scope>
+            <systemPath>C:/Users/benou/eclipse-workspace/JavaPathENProject8/TourGuide/libs/rewardCentral.jar</systemPath>
 		</dependency>
+		
 	</dependencies>
 
 	<build>
