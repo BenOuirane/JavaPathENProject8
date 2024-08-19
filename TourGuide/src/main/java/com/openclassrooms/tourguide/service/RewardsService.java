@@ -3,6 +3,7 @@ package com.openclassrooms.tourguide.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import gpsUtil.GpsUtil;
@@ -39,8 +40,46 @@ public class RewardsService {
 	}
 	
   //  private static final Logger logger = Logger.getLogger(RewardsService.class.getName());
-	 
+	/*
+	private final ReentrantLock lock = new ReentrantLock();
+
+	public void calculateRewards(User user) {
+	    lock.lock();
+	    try {
+	        List<VisitedLocation> userLocations = new ArrayList<>(user.getVisitedLocations());
+	        List<Attraction> attractions = gpsUtil.getAttractions();
+
+	        Set<String> rewardedAttractions = user.getUserRewards().stream()
+	            .map(reward -> reward.attraction.attractionName)
+	            .collect(Collectors.toSet());
+
+	        List<UserReward> rewardsToAdd = new ArrayList<>();
+	        int totalRewards = 0; 
+
+	        for (VisitedLocation visitedLocation : userLocations) {
+	            for (Attraction attraction : attractions) {
+	                if (!rewardedAttractions.contains(attraction.attractionName) &&
+	                    nearAttraction(visitedLocation, attraction)) {
+
+	                    rewardsToAdd.add(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));
+	                    rewardedAttractions.add(attraction.attractionName);
+	                    totalRewards++; 
+	                }
+	            }
+	        }
+
+	        user.getUserRewards().addAll(rewardsToAdd);
+	        System.out.println("Total rewards to add: " + totalRewards); 
+	    } finally {
+	        lock.unlock();
+	    }
+	}
+*/
+	
+	
+	private final ReentrantLock lock = new ReentrantLock();
     public void calculateRewards(User user) {
+    	 synchronized (lock) {
         List<VisitedLocation> userLocations = new ArrayList<>(user.getVisitedLocations());
         List<Attraction> attractions = gpsUtil.getAttractions();
         
@@ -67,7 +106,7 @@ public class RewardsService {
         user.getUserRewards().addAll(rewardsToAdd);
         System.out.println("Total rewards to add: " + totalRewards); // Affichez le total des récompenses
     }
-
+    }
 
 
 	

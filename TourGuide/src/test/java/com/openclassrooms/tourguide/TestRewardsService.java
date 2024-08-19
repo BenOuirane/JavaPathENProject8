@@ -58,7 +58,8 @@ public class TestRewardsService {
 		tourGuideService.tracker.stopTracking();
 
 		assertEquals(gpsUtil.getAttractions().size(), userRewards.size());
+		
 	}	
-
+         
 	
 }
