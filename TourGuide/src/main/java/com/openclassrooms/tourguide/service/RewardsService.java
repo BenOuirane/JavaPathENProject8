@@ -1,17 +1,10 @@
 package com.openclassrooms.tourguide.service;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
 import org.springframework.stereotype.Service;
-
 import gpsUtil.GpsUtil;
 import gpsUtil.location.Attraction;
 import gpsUtil.location.Location;
@@ -19,7 +12,6 @@ import gpsUtil.location.VisitedLocation;
 import rewardCentral.RewardCentral;
 import com.openclassrooms.tourguide.user.User;
 import com.openclassrooms.tourguide.user.UserReward;
-
 
 
 @Service
@@ -45,13 +37,9 @@ public class RewardsService {
 	public void setDefaultProximityBuffer() {
 		proximityBuffer = defaultProximityBuffer;
 	}
-
 	
-    private static final Logger logger = Logger.getLogger(RewardsService.class.getName());
-
-	
-   
-    
+  //  private static final Logger logger = Logger.getLogger(RewardsService.class.getName());
+	 
     public void calculateRewards(User user) {
         List<VisitedLocation> userLocations = new ArrayList<>(user.getVisitedLocations());
         List<Attraction> attractions = gpsUtil.getAttractions();
