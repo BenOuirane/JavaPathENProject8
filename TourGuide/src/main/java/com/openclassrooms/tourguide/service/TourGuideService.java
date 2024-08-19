@@ -44,7 +44,7 @@ public class TourGuideService {
 		this.rewardsService = rewardsService;
 		
 		Locale.setDefault(Locale.US);
-
+ 
 		if (testMode) {
 			logger.info("TestMode enabled");
 			logger.debug("Initializing users");

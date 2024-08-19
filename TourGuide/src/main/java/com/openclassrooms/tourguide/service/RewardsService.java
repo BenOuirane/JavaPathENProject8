@@ -1,6 +1,11 @@
 package com.openclassrooms.tourguide.service;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -11,6 +16,8 @@ import gpsUtil.location.VisitedLocation;
 import rewardCentral.RewardCentral;
 import com.openclassrooms.tourguide.user.User;
 import com.openclassrooms.tourguide.user.UserReward;
+
+
 
 @Service
 public class RewardsService {
@@ -31,11 +38,106 @@ public class RewardsService {
 	public void setProximityBuffer(int proximityBuffer) {
 		this.proximityBuffer = proximityBuffer;
 	}
-	
+	 
 	public void setDefaultProximityBuffer() {
 		proximityBuffer = defaultProximityBuffer;
 	}
 	
+      
+          
+
+	
+	/*
+	public void calculateRewards(User user) {
+	    List<VisitedLocation> userLocations = new ArrayList<>(user.getVisitedLocations());
+	    List<Attraction> attractions = gpsUtil.getAttractions();
+
+	    Set<String> rewardedAttractions = user.getUserRewards().stream()
+	        .map(reward -> reward.attraction.attractionName)
+	        .collect(Collectors.toSet());
+
+	    List<UserReward> rewardsToAdd = Collections.synchronizedList(new ArrayList<>());
+
+	    // Parallel processing of visited locations
+	    userLocations.parallelStream().forEach(visitedLocation -> {
+	        attractions.parallelStream().forEach(attraction -> {
+	            if (!rewardedAttractions.contains(attraction.attractionName)) {
+	                if (nearAttraction(visitedLocation, attraction)) {
+	                    synchronized (rewardsToAdd) {
+	                        rewardsToAdd.add(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));
+	                    }
+	                    rewardedAttractions.add(attraction.attractionName);
+	                }
+	            }
+	        });
+	    });
+
+	    // Add all collected rewards to the user's rewards
+	    user.getUserRewards().addAll(rewardsToAdd);
+	}
+          */
+	
+	/*
+	public void calculateRewards(User user) {
+	    List<VisitedLocation> userLocations = new ArrayList<>(user.getVisitedLocations());  // Copy of the visited locations
+
+	    // Fetch the attractions internally
+	    List<Attraction> attractions = gpsUtil.getAttractions();
+
+	    // Use a Set to store already rewarded attractions for faster lookup
+	    Set<String> rewardedAttractions = user.getUserRewards().stream()
+	        .map(reward -> reward.attraction.attractionName)
+	        .collect(Collectors.toSet());
+
+	    // Collect rewards to be added
+	    List<UserReward> rewardsToAdd = new ArrayList<>();
+
+	    // Loop through copied visited locations and attractions
+	    for (VisitedLocation visitedLocation : userLocations) {
+	        for (Attraction attraction : attractions) {
+	            // Skip if the user has already been rewarded for this attraction
+	            if (!rewardedAttractions.contains(attraction.attractionName)) {
+	                if (nearAttraction(visitedLocation, attraction)) {
+	                    UserReward reward = new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user));
+	                    rewardsToAdd.add(reward);  // Add to the temporary list
+	                    rewardedAttractions.add(attraction.attractionName);
+	                }
+	            }
+	        }
+	    }
+
+	    // Add all collected rewards to the user's rewards
+	    user.getUserRewards().addAll(rewardsToAdd);
+	}
+           */
+
+
+	
+
+	public void calculateRewards(User user) {
+	    List<VisitedLocation> userLocations = new CopyOnWriteArrayList<>(user.getVisitedLocations());
+	    List<Attraction> attractions = gpsUtil.getAttractions();
+
+	    List<UserReward> newRewards = new CopyOnWriteArrayList<>();
+
+	    for (VisitedLocation visitedLocation : userLocations) {
+	        for (Attraction attraction : attractions) {
+	            boolean alreadyRewarded = user.getUserRewards().stream()
+	                .anyMatch(r -> r.attraction.attractionName.equals(attraction.attractionName));
+	            
+	            if (!alreadyRewarded && nearAttraction(visitedLocation, attraction)) {
+	                newRewards.add(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));
+	            }
+	        }
+	    }
+
+	    user.getUserRewards().addAll(newRewards);
+	}
+     
+   
+
+
+       /*
 	public void calculateRewards(User user) {
 		List<VisitedLocation> userLocations = user.getVisitedLocations();
 		List<Attraction> attractions = gpsUtil.getAttractions();
@@ -50,6 +152,7 @@ public class RewardsService {
 			}
 		}
 	}
+	       */
 	
 	public boolean isWithinAttractionProximity(Attraction attraction, Location location) {
 		return getDistance(attraction, location) > attractionProximityRange ? false : true;

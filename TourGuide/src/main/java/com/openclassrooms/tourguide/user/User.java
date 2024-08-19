@@ -24,7 +24,7 @@ public class User {
 		this.phoneNumber = phoneNumber;
 		this.emailAddress = emailAddress;
 	}
-	
+	 
 	public UUID getUserId() {
 		return userId;
 	}
