@@ -2,9 +2,12 @@ package com.openclassrooms.tourguide.service;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -42,9 +45,42 @@ public class RewardsService {
 	public void setDefaultProximityBuffer() {
 		proximityBuffer = defaultProximityBuffer;
 	}
+
 	
-      
-          
+    private static final Logger logger = Logger.getLogger(RewardsService.class.getName());
+
+	
+   
+    
+    public void calculateRewards(User user) {
+        List<VisitedLocation> userLocations = new ArrayList<>(user.getVisitedLocations());
+        List<Attraction> attractions = gpsUtil.getAttractions();
+        
+        Set<String> rewardedAttractions = user.getUserRewards().stream()
+            .map(reward -> reward.attraction.attractionName)
+            .collect(Collectors.toSet());
+
+        List<UserReward> rewardsToAdd = new ArrayList<>();
+        int totalRewards = 0; // Ajoutez cette variable pour suivre le nombre total de récompenses
+
+        for (VisitedLocation visitedLocation : userLocations) {
+            for (Attraction attraction : attractions) {
+                if (!rewardedAttractions.contains(attraction.attractionName) &&
+                    nearAttraction(visitedLocation, attraction)) {
+
+                    // Ajoute la récompense
+                    rewardsToAdd.add(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));
+                    rewardedAttractions.add(attraction.attractionName);
+                    totalRewards++; // Incrémentez le total
+                }
+            }
+        }
+
+        user.getUserRewards().addAll(rewardsToAdd);
+        System.out.println("Total rewards to add: " + totalRewards); // Affichez le total des récompenses
+    }
+
+
 
 	
 	/*
@@ -112,7 +148,7 @@ public class RewardsService {
            */
 
 
-	
+	/*
 
 	public void calculateRewards(User user) {
 	    List<VisitedLocation> userLocations = new CopyOnWriteArrayList<>(user.getVisitedLocations());
@@ -133,7 +169,7 @@ public class RewardsService {
 
 	    user.getUserRewards().addAll(newRewards);
 	}
-     
+     */
    
 
 
@@ -158,9 +194,11 @@ public class RewardsService {
 		return getDistance(attraction, location) > attractionProximityRange ? false : true;
 	}
 	
+    
 	private boolean nearAttraction(VisitedLocation visitedLocation, Attraction attraction) {
 		return getDistance(attraction, visitedLocation.location) > proximityBuffer ? false : true;
 	}
+	
 	
 	private int getRewardPoints(Attraction attraction, User user) {
 		return rewardsCentral.getAttractionRewardPoints(attraction.attractionId, user.getUserId());
@@ -179,5 +217,7 @@ public class RewardsService {
         double statuteMiles = STATUTE_MILES_PER_NAUTICAL_MILE * nauticalMiles;
         return statuteMiles;
 	}
-
+	
+	
+	
 }

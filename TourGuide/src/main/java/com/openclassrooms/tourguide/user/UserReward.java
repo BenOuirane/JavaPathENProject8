@@ -26,5 +26,10 @@ public class UserReward {
 	public int getRewardPoints() {
 		return rewardPoints;
 	}
+
+	public Attraction getAttraction() {
+		return attraction;
+	}
+	
 	
 }
