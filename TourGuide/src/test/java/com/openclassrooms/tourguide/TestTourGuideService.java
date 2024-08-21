@@ -3,6 +3,8 @@ package com.openclassrooms.tourguide;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -11,9 +13,13 @@ import org.junit.jupiter.api.Test;
 
 import gpsUtil.GpsUtil;
 import gpsUtil.location.Attraction;
+import gpsUtil.location.Location;
 import gpsUtil.location.VisitedLocation;
 import rewardCentral.RewardCentral;
 import com.openclassrooms.tourguide.helper.InternalTestHelper;
+import com.openclassrooms.tourguide.record.NearByAttraction;
+import com.openclassrooms.tourguide.record.NearByAttractionList;
+import com.openclassrooms.tourguide.service.GpsUtilServiceAsync;
 import com.openclassrooms.tourguide.service.RewardsService;
 import com.openclassrooms.tourguide.service.TourGuideService;
 import com.openclassrooms.tourguide.user.User;
@@ -92,7 +98,46 @@ public class TestTourGuideService {
 		assertEquals(user.getUserId(), visitedLocation.userId);
 	}
 
-	@Disabled // Not yet implemented
+	
+	@Test
+	public void getNearbyAttractions() {
+		GpsUtil gpsUtil = new GpsUtil();
+		RewardsService rewardsService = new RewardsService(gpsUtil, new RewardCentral());
+		InternalTestHelper.setInternalUserNumber(0);
+		TourGuideService tourGuideService = new TourGuideService(gpsUtil, rewardsService);
+
+		User user = new User(UUID.randomUUID(), "jon", "000", "jon@tourGuide.com");
+		VisitedLocation visitedLocation = tourGuideService.trackUserLocation(user);
+
+		NearByAttractionList attractions = tourGuideService.getNearByAttractions(visitedLocation);
+
+		tourGuideService.tracker.stopTracking();
+
+		assertEquals(5, attractions.nearByAttractionList().length);
+
+		GpsUtilServiceAsync gpsUtilServiceAsync = new GpsUtilServiceAsync();
+		NearByAttraction[] nearByAttractions = gpsUtilServiceAsync.getAttractionsAsync().join().stream()
+				.map(attraction -> new NearByAttraction(
+						attraction.attractionName,
+						null,
+						0,
+						0,
+						rewardsService.getDistance(attraction, visitedLocation.location),
+						0
+				))
+				.sorted(Comparator.comparingDouble(NearByAttraction::distance))
+				.limit(5)
+				.toArray(NearByAttraction[]::new);
+
+		for (int i = 0 ; i < attractions.nearByAttractionList().length ; i++) {
+			assertEquals(attractions.nearByAttractionList()[i].attractionName(),nearByAttractions[i].attractionName());
+		}
+	}
+
+
+	
+//	@Disabled // Not yet implemented
+	/*
 	@Test
 	public void getNearbyAttractions() {
 		GpsUtil gpsUtil = new GpsUtil();
@@ -109,7 +154,8 @@ public class TestTourGuideService {
 
 		assertEquals(5, attractions.size());
 	}
-
+         */
+	
 	public void getTripDeals() {
 		GpsUtil gpsUtil = new GpsUtil();
 		RewardsService rewardsService = new RewardsService(gpsUtil, new RewardCentral());

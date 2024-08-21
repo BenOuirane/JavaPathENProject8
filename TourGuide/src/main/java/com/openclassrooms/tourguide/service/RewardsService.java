@@ -3,6 +3,8 @@ package com.openclassrooms.tourguide.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,12 @@ public class RewardsService {
 		this.rewardsCentral = rewardCentral;
 	}
 	
+	public RewardsService() {
+		this.gpsUtil = new GpsUtil();
+		this.rewardsCentral = new RewardCentral();
+		// TODO Auto-generated constructor stub
+	}
+
 	public void setProximityBuffer(int proximityBuffer) {
 		this.proximityBuffer = proximityBuffer;
 	}
@@ -77,7 +85,33 @@ public class RewardsService {
 */
 	
 	
-	private final ReentrantLock lock = new ReentrantLock();
+	private final RewardCentralServiceAsync rewardCentralServiceAsync = new RewardCentralServiceAsync();
+	private final GpsUtilServiceAsync gpsUtilServiceAsync = new GpsUtilServiceAsync();
+	private final Object lock = new Object();
+     
+
+	
+	
+	
+	public void calculateReward(User user) {
+		List<Attraction> attractions = gpsUtilServiceAsync.getAttractionsAsync().join();
+
+		List<VisitedLocation> userLocations = new CopyOnWriteArrayList<>(user.getVisitedLocations());
+		userLocations.forEach((visitedLocation) -> {
+			attractions.stream()
+					.filter(a -> (nearAttraction(visitedLocation, a)) && user
+							.getUserRewards()
+							.stream()
+							.noneMatch(r -> r
+							.attraction.attractionName.equals(a.attractionName)))
+					.forEach(a -> user
+							.addUserReward(new UserReward(visitedLocation, a, rewardCentralServiceAsync
+							.getAttractionRewardPointsAsync(a.attractionId,user.getUserId()).join())));
+		});
+	 
+	}
+	     
+	
     public void calculateRewards(User user) {
     	 synchronized (lock) {
         List<VisitedLocation> userLocations = new ArrayList<>(user.getVisitedLocations());
@@ -108,7 +142,9 @@ public class RewardsService {
     }
     }
 
-
+          
+	
+	
 	
 	/*
 	public void calculateRewards(User user) {

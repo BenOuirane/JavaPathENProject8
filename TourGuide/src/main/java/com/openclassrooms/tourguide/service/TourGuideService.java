@@ -1,6 +1,8 @@
 package com.openclassrooms.tourguide.service;
 
 import com.openclassrooms.tourguide.helper.InternalTestHelper;
+import com.openclassrooms.tourguide.record.NearByAttraction;
+import com.openclassrooms.tourguide.record.NearByAttractionList;
 import com.openclassrooms.tourguide.tracker.Tracker;
 import com.openclassrooms.tourguide.user.User;
 import com.openclassrooms.tourguide.user.UserReward;
@@ -8,6 +10,7 @@ import com.openclassrooms.tourguide.user.UserReward;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -88,13 +91,46 @@ public class TourGuideService {
 		return providers;
 	}
 
+	
+	public VisitedLocation trackUserLocation(User user) {
+		VisitedLocation visitedLocation = gpsUtilServiceAsync.getUserLocationAsync(user.getUserId()).join();
+		user.addToVisitedLocations(visitedLocation);
+		rewardsService.calculateRewards(user);
+		return visitedLocation;
+	}
+	
+	// we nned to optimize this method : 
+	/*
 	public VisitedLocation trackUserLocation(User user) {
 		VisitedLocation visitedLocation = gpsUtil.getUserLocation(user.getUserId());
 		user.addToVisitedLocations(visitedLocation);
 		rewardsService.calculateRewards(user);
 		return visitedLocation;
 	}
+	*/
+	
+	private final RewardCentralServiceAsync rewardCentralServiceAsync = new RewardCentralServiceAsync();
+	private final GpsUtilServiceAsync gpsUtilServiceAsync = new GpsUtilServiceAsync();
+	
+	public NearByAttractionList getNearByAttractions(VisitedLocation visitedLocation) {
+		NearByAttraction[] nearByAttractions = gpsUtilServiceAsync.getAttractionsAsync().join().stream()
+				.map(attraction -> new NearByAttraction(
+						attraction.attractionName,
+						attraction.attractionId,
+						attraction.latitude,
+						attraction.longitude,
+						rewardsService.getDistance(attraction, visitedLocation.location),
+						0
+				))
+				.sorted(Comparator.comparingDouble(NearByAttraction::distance))
+				.limit(5)
+				.map(nearByAttraction -> nearByAttraction.withReward(rewardCentralServiceAsync.getAttractionRewardPointsAsync(nearByAttraction.attractionId(), visitedLocation.userId).join()))
+				.toArray(NearByAttraction[]::new);
+		return new NearByAttractionList(visitedLocation.location, nearByAttractions);
+          }
 
+
+	/*
 	public List<Attraction> getNearByAttractions(VisitedLocation visitedLocation) {
 		List<Attraction> nearbyAttractions = new ArrayList<>();
 		for (Attraction attraction : gpsUtil.getAttractions()) {
@@ -105,6 +141,7 @@ public class TourGuideService {
 
 		return nearbyAttractions;
 	}
+	*/
 
 	private void addShutDownHook() {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -160,5 +197,7 @@ public class TourGuideService {
 		LocalDateTime localDateTime = LocalDateTime.now().minusDays(new Random().nextInt(30));
 		return Date.from(localDateTime.toInstant(ZoneOffset.UTC));
 	}
+
+
 
 }
