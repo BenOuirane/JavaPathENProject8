@@ -161,6 +161,38 @@ public class TourGuideService {
 	}
 	
 	/*
+	public List<VisitedLocation> trackMultipleUserLocations(List<User> users) {
+	    // Create a thread pool with a size limited by the number of users or a max of 1000
+	    ExecutorService executor = Executors.newFixedThreadPool(Math.min(users.size(), 1000));
+
+	    // Process each user's location in parallel
+	    List<CompletableFuture<VisitedLocation>> futures = users.stream()
+	        .map(user -> CompletableFuture.supplyAsync(() -> {
+	            // Asynchronously retrieve the user's location
+	            VisitedLocation visitedLocation = gpsUtilServiceAsync.getUserLocationAsync(user.getUserId()).join();
+	            
+	            // Add the location and asynchronously calculate rewards
+	            user.addToVisitedLocations(visitedLocation);
+	            CompletableFuture.runAsync(() -> rewardsService.calculateRewards(user), executor);
+	            
+	            // Return the visited location immediately
+	            return visitedLocation;
+	        }, executor))
+	        .collect(Collectors.toList());
+
+	    // Wait for all operations to complete and collect the results
+	    List<VisitedLocation> results = futures.stream()
+	        .map(CompletableFuture::join)
+	        .collect(Collectors.toList());
+
+	    // Shutdown the thread pool
+	    executor.shutdown();
+	    
+	    return results;
+	}
+         */
+	
+
 	public VisitedLocation trackUserLocation(User user) {
 	    // Lancer l'obtention de la localisation de l'utilisateur de manière asynchrone
 	    CompletableFuture<VisitedLocation> locationFuture = gpsUtilServiceAsync.getUserLocationAsync(user.getUserId());
@@ -177,8 +209,9 @@ public class TourGuideService {
 	    // Retourner la localisation immédiatement
 	    return visitedLocation;
 	}
-	*/
-	   
+	
+	
+	   /*
 	
 	public VisitedLocation trackUserLocation(User user) {
 		VisitedLocation visitedLocation = gpsUtilServiceAsync.getUserLocationAsync(user.getUserId()).join();
@@ -186,7 +219,7 @@ public class TourGuideService {
 		rewardsService.calculateRewards(user);
 		return visitedLocation;
 	}
-		
+		*/
 	// we nned to optimize this method : 
 	
 	/*
