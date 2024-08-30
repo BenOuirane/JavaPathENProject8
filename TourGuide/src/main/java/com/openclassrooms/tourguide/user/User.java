@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import gpsUtil.location.VisitedLocation;
@@ -16,7 +17,13 @@ public class User {
 	private String emailAddress;
 	private Date latestLocationTimestamp;
 	private List<VisitedLocation> visitedLocations = new ArrayList<>();
-	private List<UserReward> userRewards = new CopyOnWriteArrayList<>(); // instead of : new ArrayList<>();
+	private CopyOnWriteArrayList<UserReward>  userRewards = new CopyOnWriteArrayList<>(); // instead of : new ArrayList<>();
+	//private ConcurrentLinkedQueue<UserReward>  userRewards = new  ConcurrentLinkedQueue<>(); // for test
+
+	public CopyOnWriteArrayList<UserReward> getUserRewards() {
+        return userRewards;
+    }
+	
 	private UserPreferences userPreferences = new UserPreferences();
 	private List<Provider> tripDeals = new ArrayList<>();
 	public User(UUID userId, String userName, String phoneNumber, String emailAddress) {
@@ -76,9 +83,12 @@ public class User {
 		}
 	}
 	
+	/*
 	public List<UserReward> getUserRewards() {
 		return userRewards;
 	}
+	*/
+	
 	
 	public UserPreferences getUserPreferences() {
 		return userPreferences;

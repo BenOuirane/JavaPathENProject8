@@ -1,0 +1,36 @@
+name: Continuous integration
+on:
+  push:
+    branches: 
+    - dev
+  pull_request:
+    branches:
+    - dev
+
+jobs:
+  backend-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: "17"
+        distribution: "temurin"
+        cache: maven
+
+    - name: Install gpsUtil library
+      run: mvn install:install-file -Dfile=TourGuide/libs/gpsUtil.jar -DgroupId=gpsUtil -DartifactId=gpsUtil -Dversion=1.0.0 -Dpackaging=jar
+
+    - name: Install rewardCentral library
+      run: mvn install:install-file -Dfile=TourGuide/libs/RewardCentral.jar -DgroupId=rewardCentral -DartifactId=rewardCentral -Dversion=1.0.0 -Dpackaging=jar
+
+    - name: Install tripPricer library
+      run: mvn install:install-file -Dfile=TourGuide/libs/TripPricer.jar -DgroupId=tripPricer -DartifactId=tripPricer -Dversion=1.0.0 -Dpackaging=jar
+
+    - name: Run tests with Maven
+      run: mvn test --file TourGuide/pom.xml
+
+    - name: Build with Maven
+      run: mvn -B package --file TourGuide/pom.xml

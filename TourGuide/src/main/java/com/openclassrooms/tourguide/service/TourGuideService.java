@@ -18,6 +18,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -61,13 +64,50 @@ public class TourGuideService {
 	public List<UserReward> getUserRewards(User user) {
 		return user.getUserRewards();
 	}
+	
+	
+	public List<VisitedLocation> getUserLocation(List<User> users) {
+	    // Liste pour stocker les résultats
+	    List<VisitedLocation> visitedLocations = new ArrayList<>();
 
+	    // Parcourir tous les utilisateurs
+	    for (User user : users) {
+	        // Si l'utilisateur a déjà des localisations visitées, utiliser la dernière localisation
+	        if (user.getVisitedLocations().size() > 0) {
+	            visitedLocations.add(user.getLastVisitedLocation());
+	        } else {
+	            // Si l'utilisateur n'a pas de localisation, traitez-le avec trackAllUsersLocations
+	            List<User> singleUserList = List.of(user);
+	            visitedLocations.addAll(trackAllUsersLocations(singleUserList));
+	        }
+	    }
+
+	    return visitedLocations;
+	}
+
+/*
+	public VisitedLocation getUserLocation(User user) {
+	    // Si l'utilisateur a déjà des localisations visitées, retourner la dernière
+	    if (user.getVisitedLocations().size() > 0) {
+	        return user.getLastVisitedLocation();
+	    } else {
+	        // Sinon, traitez l'utilisateur dans une liste avec la méthode optimisée
+	        List<User> singleUserList = List.of(user);
+	        List<VisitedLocation> visitedLocations = trackAllUsersLocations(singleUserList);
+	        
+	        // Puisque nous savons qu'il n'y a qu'un seul utilisateur dans la liste, retourner le premier résultat
+	        return visitedLocations.get(0);
+	    }
+	}
+	*/
+	
+	/*
 	public VisitedLocation getUserLocation(User user) {
 		VisitedLocation visitedLocation = (user.getVisitedLocations().size() > 0) ? user.getLastVisitedLocation()
 				: trackUserLocation(user);
 		return visitedLocation;
 	}
-
+        */
 	public User getUser(String userName) {
 		return internalUserMap.get(userName);
 	}
@@ -92,14 +132,63 @@ public class TourGuideService {
 	}
 
 	
+	public List<VisitedLocation> trackAllUsersLocations(List<User> users) {
+	    // Utilisation d'un thread pool pour limiter le nombre de threads créés
+	    ExecutorService executor = Executors.newFixedThreadPool(Math.min(users.size(), 1000)); // Ajustez en fonction des capacités de votre serveur
+
+	    // Traitement parallèle des utilisateurs
+	    List<CompletableFuture<VisitedLocation>> futures = users.stream()
+	            .map(user -> CompletableFuture.supplyAsync(() -> {
+	                // Récupérer la localisation de l'utilisateur de manière asynchrone
+	                VisitedLocation visitedLocation = gpsUtilServiceAsync.getUserLocationAsync(user.getUserId()).join();
+	                
+	                // Ajouter la localisation et lancer le calcul des récompenses de manière asynchrone
+	                user.addToVisitedLocations(visitedLocation);
+	                CompletableFuture.runAsync(() -> rewardsService.calculateRewards(user), executor);
+	                
+	                // Retourner immédiatement la localisation
+	                return visitedLocation;
+	            }, executor))
+	            .collect(Collectors.toList());
+
+	    // Attendre que toutes les opérations soient terminées et collecter les résultats
+	    List<VisitedLocation> results = futures.stream()
+	            .map(CompletableFuture::join)
+	            .collect(Collectors.toList());
+
+	    executor.shutdown(); // Fermer le pool de threads
+	    return results;
+	}
+	
+	/*
+	public VisitedLocation trackUserLocation(User user) {
+	    // Lancer l'obtention de la localisation de l'utilisateur de manière asynchrone
+	    CompletableFuture<VisitedLocation> locationFuture = gpsUtilServiceAsync.getUserLocationAsync(user.getUserId());
+	    
+	    // Dès que la localisation est obtenue, commencez à calculer les récompenses de manière asynchrone
+	    CompletableFuture<Void> rewardsFuture = locationFuture.thenAcceptAsync(visitedLocation -> {
+	        user.addToVisitedLocations(visitedLocation);
+	        rewardsService.calculateRewards(user);
+	    });
+
+	    // Attendre l'obtention de la localisation, mais ne pas attendre le calcul des récompenses
+	    VisitedLocation visitedLocation = locationFuture.join();
+
+	    // Retourner la localisation immédiatement
+	    return visitedLocation;
+	}
+	*/
+	   
+	
 	public VisitedLocation trackUserLocation(User user) {
 		VisitedLocation visitedLocation = gpsUtilServiceAsync.getUserLocationAsync(user.getUserId()).join();
 		user.addToVisitedLocations(visitedLocation);
 		rewardsService.calculateRewards(user);
 		return visitedLocation;
 	}
-	
+		
 	// we nned to optimize this method : 
+	
 	/*
 	public VisitedLocation trackUserLocation(User user) {
 		VisitedLocation visitedLocation = gpsUtil.getUserLocation(user.getUserId());
@@ -124,13 +213,15 @@ public class TourGuideService {
 				))
 				.sorted(Comparator.comparingDouble(NearByAttraction::distance))
 				.limit(5)
-				.map(nearByAttraction -> nearByAttraction.withReward(rewardCentralServiceAsync.getAttractionRewardPointsAsync(nearByAttraction.attractionId(), visitedLocation.userId).join()))
+				.map(nearByAttraction -> nearByAttraction
+						   .withReward(rewardCentralServiceAsync
+								   .getAttractionRewardPointsAsync(nearByAttraction.attractionId(), visitedLocation.userId).join()))
 				.toArray(NearByAttraction[]::new);
 		return new NearByAttractionList(visitedLocation.location, nearByAttractions);
           }
-
-
-	/*
+        
+/*
+	
 	public List<Attraction> getNearByAttractions(VisitedLocation visitedLocation) {
 		List<Attraction> nearbyAttractions = new ArrayList<>();
 		for (Attraction attraction : gpsUtil.getAttractions()) {

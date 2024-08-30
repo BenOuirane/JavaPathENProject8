@@ -1,5 +1,7 @@
 package com.openclassrooms.tourguide.record;
 
+
+
 import gpsUtil.location.Location;
 
 public record NearByAttractionList(
@@ -7,4 +9,5 @@ public record NearByAttractionList(
 	     NearByAttraction[] nearByAttractionList
 		) {
 
+    
 }

@@ -1,10 +1,13 @@
 package com.openclassrooms.tourguide.service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
@@ -92,7 +95,7 @@ public class RewardsService {
 
 	
 	
-	
+	/*
 	public void calculateReward(User user) {
 		List<Attraction> attractions = gpsUtilServiceAsync.getAttractionsAsync().join();
 
@@ -110,8 +113,92 @@ public class RewardsService {
 		});
 	 
 	}
-	     
+	*/
 	
+	/*
+	public void calculateRewards(User user) {
+	    // Utilisation d'un thread pool pour limiter le nombre de threads créés
+	    ExecutorService executor = Executors.newFixedThreadPool(Math.min(user.getVisitedLocations().size(), 10000));
+
+	    // Récupérer les attractions de manière asynchrone
+	    CompletableFuture<List<Attraction>> attractionsFuture = CompletableFuture.supplyAsync(() -> gpsUtil.getAttractions(), executor);
+
+	    // Une fois les attractions récupérées, traiter les récompenses
+	    List<CompletableFuture<Void>> futures = attractionsFuture.thenApply(attractions -> {
+	        return user.getVisitedLocations().stream()
+	            .map(visitedLocation -> CompletableFuture.runAsync(() -> {
+	                attractions.stream()
+	                    .filter(attraction -> user.getUserRewards().stream()
+	                        .noneMatch(r -> r.attraction.attractionName.equals(attraction.attractionName)) &&
+	                        nearAttraction(visitedLocation, attraction))
+	                    .forEach(attraction -> {
+	                        int rewardPoints = getRewardPoints(attraction, user);
+	                        user.addUserReward(new UserReward(visitedLocation, attraction, rewardPoints));
+	                    });
+	            }, executor))
+	            .collect(Collectors.toList());
+	    }).join();
+
+	    // Attendre que toutes les tâches soient terminées
+	    CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+	    // Fermer le pool de threads après utilisation
+	    executor.shutdown();
+	}
+	  */
+	  
+	
+            
+	
+	
+	
+	
+	
+	   /*
+	public void calculateRewards(User user) {
+	    // Utilisation d'un thread pool pour limiter le nombre de threads créés
+	    ExecutorService executor = Executors.newFixedThreadPool(Math.min(user.getVisitedLocations().size(), 1000));
+
+	    // Récupérer les attractions de manière asynchrone
+	    CompletableFuture<List<Attraction>> attractionsFuture = gpsUtilServiceAsync.getAttractionsAsync();
+
+	    // Une fois les attractions récupérées, traiter les récompenses
+	    attractionsFuture.thenAccept(attractions -> {
+	        List<VisitedLocation> userLocations = new CopyOnWriteArrayList<>(user.getVisitedLocations());
+
+	        // Traitement parallèle des emplacements visités
+	        List<CompletableFuture<Void>> futures = userLocations.stream()
+	            .map(visitedLocation -> CompletableFuture.runAsync(() -> {
+	                attractions.stream()
+	                    .filter(a -> nearAttraction(visitedLocation, a) &&
+	                        user.getUserRewards().stream()
+	                            .noneMatch(r -> r.attraction.attractionName.equals(a.attractionName)))
+	                    .forEach(a -> {
+	                        // Récupération asynchrone des points de récompense
+	                        int rewardPoints = rewardCentralServiceAsync
+	                            .getAttractionRewardPointsAsync(a.attractionId, user.getUserId()).join();
+	                        // Ajout de la récompense à l'utilisateur
+	                        user.addUserReward(new UserReward(visitedLocation, a, rewardPoints));
+	                    });
+	            }, executor)) // Exécuter chaque tâche dans le pool de threads
+	            .collect(Collectors.toList());
+
+	        // Attendre que toutes les tâches de calcul des récompenses soient terminées
+	        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+	    }).join(); // Attendre la fin de toutes les opérations
+
+	    // Fermer le pool de threads après utilisation
+	    executor.shutdown();
+	}
+           
+	*/
+	
+	
+	
+	
+
+	
+	/*
     public void calculateRewards(User user) {
     	 synchronized (lock) {
         List<VisitedLocation> userLocations = new ArrayList<>(user.getVisitedLocations());
@@ -141,7 +228,7 @@ public class RewardsService {
         System.out.println("Total rewards to add: " + totalRewards); // Affichez le total des récompenses
     }
     }
-
+          */
           
 	
 	
@@ -176,7 +263,7 @@ public class RewardsService {
 	}
           */
 	
-	/*
+	
 	public void calculateRewards(User user) {
 	    List<VisitedLocation> userLocations = new ArrayList<>(user.getVisitedLocations());  // Copy of the visited locations
 
@@ -208,7 +295,6 @@ public class RewardsService {
 	    // Add all collected rewards to the user's rewards
 	    user.getUserRewards().addAll(rewardsToAdd);
 	}
-           */
 
 
 	/*
